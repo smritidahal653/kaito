@@ -186,6 +186,7 @@ func TestEnsureTuningConfigMap(t *testing.T) {
 				os.Setenv(consts.DefaultReleaseNamespaceEnvVar, "release-namespace")
 			},
 			callMocks: func(c *test.MockClient) {
+				os.Setenv(consts.DefaultReleaseNamespaceEnvVar, "release-namespace")
 				c.On("Get", mock.IsType(context.Background()), mock.Anything, mock.IsType(&corev1.ConfigMap{}), mock.Anything).Return(nil)
 			},
 			workspaceObj: &kaitov1alpha1.Workspace{
@@ -211,6 +212,7 @@ func TestEnsureTuningConfigMap(t *testing.T) {
 				os.Setenv(consts.DefaultReleaseNamespaceEnvVar, "release-namespace")
 			},
 			callMocks: func(c *test.MockClient) {
+				os.Setenv(consts.DefaultReleaseNamespaceEnvVar, "release-namespace")
 				c.On("Get", mock.IsType(context.Background()), mock.Anything, mock.IsType(&corev1.ConfigMap{}), mock.Anything).Return(errors.NewNotFound(schema.GroupResource{}, "config-template"))
 			},
 			workspaceObj: &kaitov1alpha1.Workspace{
