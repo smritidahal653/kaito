@@ -3,12 +3,13 @@ package tuning
 import (
 	"context"
 	"fmt"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/utils/pointer"
-	"knative.dev/pkg/apis"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/utils/pointer"
+	"knative.dev/pkg/apis"
 
 	"k8s.io/apimachinery/pkg/api/resource"
 
