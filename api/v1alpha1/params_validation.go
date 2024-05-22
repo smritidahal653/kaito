@@ -6,6 +6,10 @@ package v1alpha1
 import (
 	"context"
 	"fmt"
+	"path/filepath"
+	"reflect"
+	"strings"
+
 	"github.com/azure/kaito/pkg/k8sclient"
 	"github.com/azure/kaito/pkg/utils"
 	"gopkg.in/yaml.v2"
@@ -13,10 +17,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"knative.dev/pkg/apis"
-	"path/filepath"
-	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strings"
 )
 
 type Config struct {
