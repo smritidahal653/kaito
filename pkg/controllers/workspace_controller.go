@@ -7,7 +7,6 @@ import (
 	"context"
 	"fmt"
 	"sort"
-	"strings"
 	"time"
 
 	"github.com/azure/kaito/pkg/featuregates"
@@ -257,8 +256,14 @@ func (c *WorkspaceReconciler) applyWorkspaceResource(ctx context.Context, wObj *
 		}
 	}
 
+	skuHandler, err := utils.GetSKUHandler()
+	if err != nil {
+		return err
+	}
+	gpuConfigs := skuHandler.GetGPUConfigs()
+
 	// Ensure all gpu plugins are running successfully.
-	if strings.Contains(wObj.Resource.InstanceType, gpuSkuPrefix) { // GPU skus
+	if _, exists := gpuConfigs[wObj.Resource.InstanceType]; exists {
 		for i := range selectedNodes {
 			err = c.ensureNodePlugins(ctx, wObj, selectedNodes[i])
 			if err != nil {
