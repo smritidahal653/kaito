@@ -1,0 +1,12 @@
+apiVersion: kaito.sh/v1alpha1
+kind: Workspace
+metadata:
+  name: test-karpenter-workspace
+resource:
+  instanceType: "g5.4xlarge"
+  labelSelector:
+    matchLabels:
+      beta.kubernetes.io/instance-type: g5.4xlarge
+inference:
+  preset:
+    name: "falcon-7b"
