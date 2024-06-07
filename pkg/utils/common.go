@@ -87,7 +87,7 @@ func GetReleaseNamespace() (string, error) {
 
 func GetSKUHandler() (sku.CloudSKUHandler, error) {
 	// Get the cloud provider from the environment
-	provider := os.Getenv("CLOUD_PROVIDER")
+	provider := "aws" //os.Getenv("CLOUD_PROVIDER")
 
 	if provider == "" {
 		return nil, apis.ErrMissingField("CLOUD_PROVIDER environment variable must be set")

@@ -1,6 +1,6 @@
 
 # Image URL to use all building/pushing image targets
-REGISTRY ?= YOUR_REGISTRY
+REGISTRY ?= smritidahal
 IMG_NAME ?= workspace
 VERSION ?= v0.2.2
 IMG_TAG ?= $(subst v,,$(VERSION))
