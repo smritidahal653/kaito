@@ -205,9 +205,10 @@ func (c *WorkspaceReconciler) selectWorkspaceNodes(qualified []*corev1.Node, pre
 func (c *WorkspaceReconciler) applyWorkspaceResource(ctx context.Context, wObj *kaitov1alpha1.Workspace) error {
 
 	// Wait for pending machines if any before we decide whether to create new machine or not.
-	if err := machine.WaitForPendingMachines(ctx, wObj, c.Client); err != nil {
-		return err
-	}
+	// if err := machine.WaitForPendingMachines(ctx, wObj, c.Client); err != nil {
+	// 	return err
+	// }
+	featuregates.FeatureGates[consts.FeatureFlagKarpenter] = true
 
 	if featuregates.FeatureGates[consts.FeatureFlagKarpenter] {
 		// Wait for pending nodeClaims if any before we decide whether to create new node or not.
@@ -228,6 +229,7 @@ func (c *WorkspaceReconciler) applyWorkspaceResource(ctx context.Context, wObj *
 
 	if newNodesCount > 0 {
 		klog.InfoS("need to create more nodes", "NodeCount", newNodesCount)
+		klog.InfoS("Karpenter enabled: ", featuregates.FeatureGates[consts.FeatureFlagKarpenter])
 		if featuregates.FeatureGates[consts.FeatureFlagKarpenter] {
 			if err := c.updateStatusConditionIfNotMatch(ctx, wObj,
 				kaitov1alpha1.WorkspaceConditionTypeNodeClaimStatus, metav1.ConditionUnknown,
@@ -367,8 +369,10 @@ func (c *WorkspaceReconciler) createAndValidateNode(ctx context.Context, wObj *k
 	}
 
 	if featuregates.FeatureGates[consts.FeatureFlagKarpenter] {
+		klog.InfoS("creating node claim")
 		return c.CreateNodeClaim(ctx, wObj, nodeOSDiskSize)
 	} else {
+		klog.InfoS("creating machine")
 		return c.CreateMachine(ctx, wObj, nodeOSDiskSize)
 	}
 }
