@@ -6,6 +6,7 @@ package controllers
 import (
 	"context"
 	"errors"
+	"os"
 	"reflect"
 	"sort"
 	"testing"
@@ -887,6 +888,8 @@ func TestApplyWorkspaceResource(t *testing.T) {
 		t.Run(k, func(t *testing.T) {
 			mockClient := test.NewClient()
 			tc.callMocks(mockClient)
+
+			os.Setenv("CLOUD_PROVIDER", consts.AzureCloudName)
 
 			mockMachine := &v1alpha5.Machine{}
 			mockNodeClaim := &v1beta1.NodeClaim{}

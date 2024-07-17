@@ -7,8 +7,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"reflect"
-	"sort"
 	"strings"
 	"testing"
 
@@ -220,18 +218,17 @@ func TestResourceSpecValidateCreate(t *testing.T) {
 		{
 			name: "Insufficient total GPU memory",
 			resourceSpec: &ResourceSpec{
-				InstanceType: "Standard_NC6",
+				InstanceType: "Standard_NC6s_v3",
 				Count:        pointerToInt(1),
 			},
 			modelGPUCount:       "1",
 			modelPerGPUMemory:   "0",
-			modelTotalGPUMemory: "14Gi",
+			modelTotalGPUMemory: "18Gi",
 			preset:              true,
 			errContent:          "Insufficient total GPU memory",
 			expectErrs:          true,
 			validateTuning:      false,
 		},
-
 		{
 			name: "Insufficient number of GPUs",
 			resourceSpec: &ResourceSpec{
@@ -249,7 +246,7 @@ func TestResourceSpecValidateCreate(t *testing.T) {
 		{
 			name: "Insufficient per GPU memory",
 			resourceSpec: &ResourceSpec{
-				InstanceType: "Standard_NC6",
+				InstanceType: "Standard_NC6s_v3",
 				Count:        pointerToInt(2),
 			},
 			modelGPUCount:       "1",
@@ -260,7 +257,6 @@ func TestResourceSpecValidateCreate(t *testing.T) {
 			expectErrs:          true,
 			validateTuning:      false,
 		},
-
 		{
 			name: "Invalid SKU",
 			resourceSpec: &ResourceSpec{
@@ -292,7 +288,6 @@ func TestResourceSpecValidateCreate(t *testing.T) {
 			expectErrs:     false,
 			validateTuning: false,
 		},
-
 		{
 			name: "D-Prefix SKU",
 			resourceSpec: &ResourceSpec{
@@ -306,7 +301,7 @@ func TestResourceSpecValidateCreate(t *testing.T) {
 		{
 			name: "Tuning validation with single node",
 			resourceSpec: &ResourceSpec{
-				InstanceType: "Standard_NC6",
+				InstanceType: "Standard_NC6s_v3",
 				Count:        pointerToInt(1),
 			},
 			errContent:     "",
@@ -316,7 +311,7 @@ func TestResourceSpecValidateCreate(t *testing.T) {
 		{
 			name: "Tuning validation with multinode",
 			resourceSpec: &ResourceSpec{
-				InstanceType: "Standard_NC6",
+				InstanceType: "Standard_NC6s_v3",
 				Count:        pointerToInt(2),
 			},
 			errContent:     "Tuning does not currently support multinode configurations",
@@ -324,6 +319,8 @@ func TestResourceSpecValidateCreate(t *testing.T) {
 			validateTuning: true,
 		},
 	}
+
+	os.Setenv("CLOUD_PROVIDER", consts.AzureCloudName)
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
@@ -1453,52 +1450,6 @@ func TestDataDestinationValidateUpdate(t *testing.T) {
 						t.Errorf("validateUpdate() expected errors to contain field %s, but got %s", field, errs.Error())
 					}
 				}
-			}
-		})
-	}
-}
-
-func TestGetSupportedSKUs(t *testing.T) {
-	tests := []struct {
-		name           string
-		gpuConfigs     map[string]GPUConfig
-		expectedResult []string // changed to a slice for deterministic ordering
-	}{
-		{
-			name:           "no SKUs supported",
-			gpuConfigs:     map[string]GPUConfig{},
-			expectedResult: []string{""},
-		},
-		{
-			name: "one SKU supported",
-			gpuConfigs: map[string]GPUConfig{
-				"Standard_NC6": {SKU: "Standard_NC6"},
-			},
-			expectedResult: []string{"Standard_NC6"},
-		},
-		{
-			name: "multiple SKUs supported",
-			gpuConfigs: map[string]GPUConfig{
-				"Standard_NC6":  {SKU: "Standard_NC6"},
-				"Standard_NC12": {SKU: "Standard_NC12"},
-			},
-			expectedResult: []string{"Standard_NC6", "Standard_NC12"},
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			SupportedGPUConfigs = tc.gpuConfigs
-
-			resultSlice := strings.Split(getSupportedSKUs(), ", ")
-			sort.Strings(resultSlice)
-
-			// Sort the expectedResult for comparison
-			expectedResultSlice := tc.expectedResult
-			sort.Strings(expectedResultSlice)
-
-			if !reflect.DeepEqual(resultSlice, expectedResultSlice) {
-				t.Errorf("getSupportedSKUs() = %v, want %v", resultSlice, expectedResultSlice)
 			}
 		})
 	}
