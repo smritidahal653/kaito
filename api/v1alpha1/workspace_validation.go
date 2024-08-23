@@ -6,12 +6,14 @@ package v1alpha1
 import (
 	"context"
 	"fmt"
-	"github.com/azure/kaito/pkg/utils/consts"
+	"os"
 	"reflect"
 	"regexp"
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/azure/kaito/pkg/utils/consts"
 
 	"github.com/azure/kaito/pkg/utils"
 	"github.com/azure/kaito/pkg/utils/plugin"
@@ -168,7 +170,7 @@ func (r *TuningSpec) validateCreate(ctx context.Context, workspaceNamespace stri
 	// Currently require a preset to specified, in future we can consider defining a template
 	if r.Preset == nil {
 		errs = errs.Also(apis.ErrMissingField("Preset"))
-	} else if presetName := string(r.Preset.Name); !isValidPreset(presetName) {
+	} else if presetName := string(r.Preset.Name); !utils.IsValidPreset(presetName) {
 		errs = errs.Also(apis.ErrInvalidValue(fmt.Sprintf("Unsupported tuning preset name %s", presetName), "presetName"))
 	}
 	return errs
@@ -327,8 +329,15 @@ func (r *ResourceSpec) validateCreateWithInference(inference *InferenceSpec) (er
 	}
 	instanceType := string(r.InstanceType)
 
-	// Check if instancetype exists in our SKUs map
-	if skuConfig, exists := SupportedGPUConfigs[instanceType]; exists {
+	skuHandler, err := utils.GetSKUHandler()
+	if err != nil {
+		errs = errs.Also(apis.ErrGeneric(fmt.Sprintf("Failed to get SKU handler: %v", err), "instanceType"))
+		return errs
+	}
+	gpuConfigs := skuHandler.GetGPUConfigs()
+
+	// Check if instancetype exists in our SKUs map for the particular skuHandler
+	if skuConfig, exists := gpuConfigs[instanceType]; exists {
 		if presetName != "" {
 			model := plugin.KaitoModelRegister.MustGet(presetName) // InferenceSpec has been validated so the name is valid.
 
@@ -382,9 +391,10 @@ func (r *ResourceSpec) validateCreateWithInference(inference *InferenceSpec) (er
 			}
 		}
 	} else {
-		// Check for other instance types pattern matches
-		if !strings.HasPrefix(instanceType, N_SERIES_PREFIX) && !strings.HasPrefix(instanceType, D_SERIES_PREFIX) {
-			errs = errs.Also(apis.ErrInvalidValue(fmt.Sprintf("Unsupported instance type %s. Supported SKUs: %s", instanceType, getSupportedSKUs()), "instanceType"))
+		provider := os.Getenv("CLOUD_PROVIDER")
+		// Check for other instance types pattern matches if cloud provider is Azure
+		if provider != consts.AzureCloudName || (provider == consts.AzureCloudName && !strings.HasPrefix(instanceType, N_SERIES_PREFIX) && !strings.HasPrefix(instanceType, D_SERIES_PREFIX)) {
+			errs = errs.Also(apis.ErrInvalidValue(fmt.Sprintf("Unsupported instance type %s. Supported SKUs: %s", instanceType, skuHandler.GetSupportedSKUs()), "instanceType"))
 		}
 	}
 
@@ -430,7 +440,7 @@ func (i *InferenceSpec) validateCreate() (errs *apis.FieldError) {
 	if i.Preset != nil {
 		presetName := string(i.Preset.Name)
 		// Validate preset name
-		if !isValidPreset(presetName) {
+		if !utils.IsValidPreset(presetName) {
 			errs = errs.Also(apis.ErrInvalidValue(fmt.Sprintf("Unsupported inference preset name %s", presetName), "presetName"))
 		}
 		// Validate private preset has private image specified
