@@ -287,7 +287,7 @@ func setupDefaultSharedVolumes(workspaceObj *kaitov1alpha1.Workspace, cmName str
 	return volumes, volumeMounts
 }
 
-func CreatePresetTuning(ctx context.Context, workspaceObj *kaitov1alpha1.Workspace,
+func CreatePresetTuning(ctx context.Context, workspaceObj *kaitov1alpha1.Workspace, revisionNum string,
 	tuningObj *model.PresetParam, kubeClient client.Client) (client.Object, error) {
 	cm, err := EnsureTuningConfigMap(ctx, workspaceObj, kubeClient)
 	if err != nil {
@@ -351,7 +351,7 @@ func CreatePresetTuning(ctx context.Context, workspaceObj *kaitov1alpha1.Workspa
 			Value: "k_proj,q_proj,v_proj,o_proj,gate_proj,down_proj,up_proj",
 		})
 	}
-	jobObj := resources.GenerateTuningJobManifest(ctx, workspaceObj, tuningImage, imagePullSecrets, *workspaceObj.Resource.Count, commands,
+	jobObj := resources.GenerateTuningJobManifest(ctx, workspaceObj, revisionNum, tuningImage, imagePullSecrets, *workspaceObj.Resource.Count, commands,
 		containerPorts, nil, nil, resourceReq, tolerations, initContainers, sidecarContainers, volumes, volumeMounts, envVars)
 
 	err = resources.CreateResource(ctx, jobObj, kubeClient)
