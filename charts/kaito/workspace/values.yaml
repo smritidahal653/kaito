@@ -3,8 +3,8 @@
 # Declare variables to be passed into your templates.
 replicaCount: 1
 image:
-  repository: mcr.microsoft.com/aks/kaito/workspace
-  pullPolicy: IfNotPresent
+  repository: smritidahal/workspace
+  pullPolicy: Always
   tag: 0.3.0
 imagePullSecrets: []
 podAnnotations: {}
@@ -16,7 +16,7 @@ securityContext:
     drop:
       - "ALL"
 featureGates:
-  Karpenter: "false"
+  Karpenter: "true"
 webhook:
   port: 9443
 presetRegistryName: mcr.microsoft.com/aks/kaito
@@ -31,4 +31,5 @@ nodeSelector: {}
 tolerations: []
 affinity: {}
 # Values can be "azure" or "aws"
-cloudProviderName: "azure"
+cloudProviderName: "aws"
+clusterName: kaitoKarpenterTest-3
