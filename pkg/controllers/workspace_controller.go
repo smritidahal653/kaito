@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
-	"strings"
 	"time"
 
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -486,8 +485,15 @@ func (c *WorkspaceReconciler) applyWorkspaceResource(ctx context.Context, wObj *
 		}
 	}
 
+	skuHandler, err := utils.GetSKUHandler()
+	if err != nil {
+		return err
+	}
+	gpuConfigs := skuHandler.GetGPUConfigs()
+
 	// Ensure all gpu plugins are running successfully.
-	if strings.Contains(wObj.Resource.InstanceType, gpuSkuPrefix) { // GPU skus
+	if _, exists := gpuConfigs[wObj.Resource.InstanceType]; exists {
+
 		for i := range selectedNodes {
 			err = c.ensureNodePlugins(ctx, wObj, selectedNodes[i])
 			if err != nil {
@@ -635,7 +641,6 @@ RetryWithDifferentName:
 func (c *WorkspaceReconciler) CreateNodeClaim(ctx context.Context, wObj *kaitov1alpha1.Workspace, nodeOSDiskSize string) (*corev1.Node, error) {
 RetryWithDifferentName:
 	newNodeClaim := nodeclaim.GenerateNodeClaimManifest(ctx, nodeOSDiskSize, wObj)
-
 	if err := nodeclaim.CreateNodeClaim(ctx, newNodeClaim, c.Client); err != nil {
 		if apierrors.IsAlreadyExists(err) {
 			klog.InfoS("There exists a nodeClaim with the same name, retry with a different name", "nodeClaim", klog.KObj(newNodeClaim))
