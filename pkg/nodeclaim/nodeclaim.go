@@ -164,8 +164,9 @@ func GenerateEC2NodeClassManifest(ctx context.Context) *awsv1beta1.EC2NodeClass 
 			Name: NodeClassName,
 		},
 		Spec: awsv1beta1.EC2NodeClassSpec{
-			AMIFamily: lo.ToPtr(awsv1beta1.AMIFamilyAL2), // Amazon Linux 2
-			Role:      fmt.Sprintf("KarpenterNodeRole-%s", clusterName),
+			AMIFamily:           lo.ToPtr(awsv1beta1.AMIFamilyAL2), // Amazon Linux 2
+			Role:                fmt.Sprintf("KarpenterNodeRole-%s", clusterName),
+			InstanceStorePolicy: lo.ToPtr(awsv1beta1.InstanceStorePolicyRAID0),
 			SubnetSelectorTerms: []awsv1beta1.SubnetSelectorTerm{
 				{
 					Tags: map[string]string{
@@ -177,6 +178,15 @@ func GenerateEC2NodeClassManifest(ctx context.Context) *awsv1beta1.EC2NodeClass 
 				{
 					Tags: map[string]string{
 						"karpenter.sh/discovery": clusterName, // replace with your cluster name
+					},
+				},
+			},
+			BlockDeviceMappings: []*awsv1beta1.BlockDeviceMapping{
+				{
+					DeviceName: lo.ToPtr("/dev/xvda"),
+					EBS: &awsv1beta1.BlockDevice{
+						VolumeSize: lo.ToPtr(resource.MustParse("50Gi")),
+						VolumeType: lo.ToPtr("gp3"),
 					},
 				},
 			},
@@ -195,7 +205,7 @@ func CreateNodeClaim(ctx context.Context, nodeClaimObj *v1beta1.NodeClaim, kubeC
 			return err
 		}
 
-		err = kubeClient.Create(ctx, nodeClaimObj, &client.CreateOptions{})
+		err = kubeClient.Create(ctx, nodeClaimObj.DeepCopy(), &client.CreateOptions{})
 		if err != nil {
 			return err
 		}
@@ -203,7 +213,6 @@ func CreateNodeClaim(ctx context.Context, nodeClaimObj *v1beta1.NodeClaim, kubeC
 
 		updatedObj := &v1beta1.NodeClaim{}
 		err = kubeClient.Get(ctx, client.ObjectKey{Name: nodeClaimObj.Name, Namespace: nodeClaimObj.Namespace}, updatedObj, &client.GetOptions{})
-
 		// if SKU is not available, then exit.
 		_, conditionFound := lo.Find(updatedObj.GetConditions(), func(condition apis.Condition) bool {
 			return condition.Type == v1beta1.Launched &&
