@@ -130,6 +130,18 @@ func GenerateNodeClaimManifest(ctx context.Context, storageRequirement string, o
 		}
 		nodeClaimObj.Spec.Requirements = append(nodeClaimObj.Spec.Requirements, nodeSelector)
 	}
+
+	if cloudName == consts.AWSCloudName {
+		nodeSelector := v1beta1.NodeSelectorRequirementWithMinValues{
+			NodeSelectorRequirement: v1.NodeSelectorRequirement{
+				Key:      "karpenter.k8s.aws/instance-gpu-count",
+				Operator: v1.NodeSelectorOpGt,
+				Values:   []string{"0"},
+			},
+		}
+		nodeClaimObj.Spec.Requirements = append(nodeClaimObj.Spec.Requirements, nodeSelector)
+	}
+
 	return nodeClaimObj
 }
 
@@ -177,15 +189,6 @@ func GenerateEC2NodeClassManifest(ctx context.Context) *awsv1beta1.EC2NodeClass 
 				{
 					Tags: map[string]string{
 						"karpenter.sh/discovery": clusterName, // replace with your cluster name
-					},
-				},
-			},
-			BlockDeviceMappings: []*awsv1beta1.BlockDeviceMapping{
-				{
-					DeviceName: lo.ToPtr("/dev/xvda"),
-					EBS: &awsv1beta1.BlockDevice{
-						VolumeSize: lo.ToPtr(resource.MustParse("50Gi")),
-						VolumeType: lo.ToPtr("gp3"),
 					},
 				},
 			},
